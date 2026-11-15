@@ -72,6 +72,49 @@ Price(amount=Decimal('22.90'), currency='€')
 The library has extensive tests (900+ real-world examples of price strings).
 Some of the supported cases are described below.
 
+Quote parsing
+-------------
+
+Price blocks on real pages often contain several numbers: a current price,
+a strikethrough "was" price, a price range, a unit ("per item") or a
+billing period ("per month"), plus distractors like discount thresholds,
+SKUs or model numbers. ``Price.fromstring`` returns a single amount for
+such input; the optional ``parse_quote`` entry point keeps the roles apart:
+
+>>> from price_parser import parse_quote
+>>> q = parse_quote("Was $49.99, Now $29.99")
+>>> q.current.amount, q.compare.amount
+(Decimal('29.99'), Decimal('49.99'))
+>>> q.current.span          # offsets of "29.99" in the original string
+(17, 22)
+>>> q.current.currency_source   # "text", "inherited" or "hint"
+'text'
+>>> q.price                 # compatible Price view of the current price
+Price(amount=Decimal('29.99'), currency='$')
+
+Ranges, units and periods are recognized as well:
+
+>>> q = parse_quote("€10 – €20")
+>>> q.range_low.amount, q.range_high.amount
+(Decimal('10'), Decimal('20'))
+>>> q.price.amount is None  # a range is not a single clear price
+True
+>>> parse_quote("$9.99/mo").period
+'/mo'
+>>> parse_quote("¥30 每件").unit
+'每件'
+
+Ambiguities and ignored distractor numbers are reported as diagnostics
+instead of being silently resolved:
+
+>>> q = parse_quote("Save 50% — now $80")
+>>> q.current.amount
+Decimal('80')
+>>> q.diagnostics
+['ignored_percent:50']
+>>> parse_quote("10 20").diagnostics
+['ambiguous_numbers', 'unattributed_number:10', 'unattributed_number:20', 'no_currency']
+
 Supported cases
 ---------------
 

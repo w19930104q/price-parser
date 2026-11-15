@@ -1,6 +1,18 @@
 Changes
 =======
 
+0.5.2 (unreleased)
+------------------
+
+* Added an optional quote parsing entry point, ``price_parser.parse_quote``,
+  which returns a ``Quote`` distinguishing the current price, compare-at
+  ("was") price, price ranges, units and billing periods. Each value keeps
+  the span of the original text and the source of its currency symbol;
+  ambiguities and ignored distractor numbers (percentages, SKUs, discount
+  thresholds, model numbers) are reported as diagnostics. ``Quote.price``
+  provides a compatible ``Price`` view with ``amount`` set to ``None`` when
+  there is no single clear price. ``Price.fromstring`` behavior is unchanged.
+
 0.5.1 (2026-03-19)
 ------------------
 
